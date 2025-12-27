@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: todo-application
+  labels:
+    app: todo-application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: todo-application
+  template:
+    metadata:
+      labels:
+        app: todo-application
+    spec:
+      containers:
+        - name: todo-application
+          image: <docker hub username>/todo-application:latest # Replace with your Docker hub repository name and tag
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql-db-service:3306/tododb
+            - name: SPRING_DATASOURCE_USERNAME
+              value: root
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: Root@123
+      imagePullSecrets:
+        - name: my-registry-secret # Docker Hub credentials secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: todo-application-service
+  labels:
+    app: todo-application
+spec:
+  selector:
+    app: todo-application
+  ports:
+    - protocol: TCP
+      port: 8081
+      targetPort: 8081
+      nodePort: 30080
+  type: NodePort # Expose the application externally

@@ -1,0 +1,46 @@
+version: "3.9"
+
+networks:
+  todo-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db-1
+    environment:
+      MYSQL_ROOT_PASSWORD: Root@123
+      MYSQL_DATABASE: tododb
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - todo-network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -pRoot@123 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  todo-application:
+    image: todo-application-image:latest
+    container_name: todo-application-1
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/tododb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Root@123
+      SERVER_PORT: 8081
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8081"
+    networks:
+      - todo-network
